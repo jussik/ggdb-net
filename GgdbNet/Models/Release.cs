@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace GgdbNet.Shared;
+namespace GgdbNet.Models;
 
 public record Release(string GameId, string Platform, string AddedDate)
 {

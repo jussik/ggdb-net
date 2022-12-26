@@ -1,0 +1,37 @@
+﻿@using GgdbNet.Models
+
+<div class="item-parent">
+    <div class="item">
+        <img class="cover" loading="lazy" src="@Game.VerticalCover" alt="@Game.Title" height="241" width="171" />
+        <div class="platform-container">
+            @foreach (string plat in Game.Platforms)
+            {
+                <img class="platform-image" src="@($"icons/{plat}.svg")" alt="@plat" width="18" height="18" />
+            }
+        </div>
+        <div class="content">
+            <div class="gradient"></div>
+            @if (Game.SteamAppId != null)
+            {
+                <a class="steam-link" href="@($"https://store.steampowered.com/app/{Game.SteamAppId}")" target="_blank">
+                    <img src="icons/link.svg" alt="link" />
+                </a>
+            }
+            <h2>@Game.Title</h2>
+            <div>
+                @if (Game.Year.HasValue) { @(Game.Year + " |") }
+                @string.Join(", ", Game.Genres)
+                |
+                @string.Join(", ", Game.Themes)
+            </div>
+            <p class="summary">@Game.Summary</p>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter, EditorRequired]
+    public Game Game { get; set; } = default!;
+
+}

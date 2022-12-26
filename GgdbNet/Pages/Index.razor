@@ -1,4 +1,17 @@
 ﻿@page "/"
+@using GgdbNet.Models
 
-<h1>Ggdb</h1>
-<DbDropArea></DbDropArea>
+@if (Games == null)
+{
+    <DbDropArea OnGamesLoaded="GamesLoaded"></DbDropArea>
+}
+else
+{
+    <GamesList Games="Games"></GamesList>
+}
+
+@code {
+    private IReadOnlyList<Game>? Games { get; set; }
+
+    private void GamesLoaded(IReadOnlyList<Game> games) => Games = games;
+}

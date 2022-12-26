@@ -1,4 +1,4 @@
-﻿namespace GgdbNet.Shared;
+﻿namespace GgdbNet.Models;
 
 public class Game
 {

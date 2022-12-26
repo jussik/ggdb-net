@@ -2,6 +2,7 @@
 @using System.Diagnostics
 @using System.Text.Json
 @using System.Text.Json.Serialization
+@using GgdbNet.Models
 @inject IJSRuntime Js
 @inject ILogger<DbDropArea> Logger
 
@@ -10,11 +11,17 @@
         width: 400px;
         height: 300px;
         border: 1px dashed #444;
+        padding: 50px;
     }
 </style>
-<div id="db-drop-area" @ref="Elem"></div>
+<div id="db-drop-area" @ref="Elem">
+    Drop galaxy-2.0.db from:<br/>
+    C:\ProgramData\GOG.com\Galaxy\storage
+</div>
 
 @code {
+    [Parameter] public EventCallback<IReadOnlyList<Game>> OnGamesLoaded { get; set; }
+
     private ElementReference Elem { get; set; }
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -91,13 +98,16 @@
                 }
             }
 
-            var games = gameReleasesById.Values
+            IReadOnlyList<Game> games = gameReleasesById.Values
                 .Select(rs => Game.Create(rs.Values))
                 .Where(g => g != null)
+                .Cast<Game>()
                 .ToList();
 
             Logger.LogInformation("Found {count} games ({valid} valid) in {ms} ms",
                 gameReleasesById.Count, games.Count, sw.ElapsedMilliseconds);
+
+            await OnGamesLoaded.InvokeAsync(games);
         }
         catch (Exception e)
         {
