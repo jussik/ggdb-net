@@ -1,0 +1,108 @@
+﻿@using Microsoft.Data.Sqlite
+@using System.Diagnostics
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@inject IJSRuntime Js
+@inject ILogger<DbDropArea> Logger
+
+<style>
+    #db-drop-area {
+        width: 400px;
+        height: 300px;
+        border: 1px dashed #444;
+    }
+</style>
+<div id="db-drop-area" @ref="Elem"></div>
+
+@code {
+    private ElementReference Elem { get; set; }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        
+        await Js.InvokeVoidAsync("registerDrop", Elem, DotNetObjectReference.Create(this));
+    }
+
+    public record Piece(string GameId, string ReleaseKey, string Platform, string AddedDate, string Type, string Json);
+
+    [JSInvokable]
+    public async Task LoadDbData(byte[] data)
+    {
+        try
+        {
+            Logger.LogInformation("Got {bytes} bytes", data.Length);
+
+            var sw = Stopwatch.StartNew();
+
+            await File.WriteAllBytesAsync("ggdb.db", data);
+            await using var conn = new SqliteConnection("Filename=ggdb.db");
+            await conn.OpenAsync();
+
+            await using var cmd = new SqliteCommand(@"
+                select rp.gameid, p.releasekey, ifnull(pc.platform, 'gog') as platform, ppd.addeddate, t.type, p.value
+                from GamePieces p
+                join LibraryReleases lr on p.releasekey = lr.releasekey
+                join ReleaseProperties rp on p.releasekey = rp.releasekey
+                    and isvisibleinlibrary = 1
+                join GamePieceTypes t on p.gamePieceTypeId = t.id
+                left join PlatformConnections pc on p.releasekey like pc.platform || '_%'
+                    and pc.connectionstate = 'Connected'
+                left join ProductPurchaseDates ppd on ppd.gamereleasekey = p.releasekey
+                left join SubscriptionReleases sub on sub.licenseid = lr.id
+                where (pc.platform is not null or p.releasekey like 'gog_%');", conn);
+            await using SqliteDataReader reader = await cmd.ExecuteReaderAsync();
+
+            Dictionary<string, Dictionary<string, Release>> gameReleasesById = new();
+            while (await reader.ReadAsync())
+            {
+                var piece = new Piece(
+                    GameId: reader.GetString(0),
+                    ReleaseKey: reader.GetString(1),
+                    Platform: reader.GetString(2),
+                    AddedDate: reader.GetString(3),
+                    Type: reader.GetString(4),
+                    Json: reader.GetString(5));
+
+                if (!gameReleasesById.TryGetValue(piece.GameId, out Dictionary<string, Release>? releases))
+                    gameReleasesById[piece.GameId] = releases = new();
+
+                if (!releases.TryGetValue(piece.ReleaseKey, out Release? release))
+                    releases[piece.ReleaseKey] = release = new Release(piece.GameId, piece.Platform, piece.AddedDate);
+
+                try
+                {
+                    if (piece.Type.StartsWith("original") && piece.Type.Length > 8)
+                    {
+                        string actualType = char.ToLowerInvariant(piece.Type[8]) + piece.Type[9..];
+                        if (!release.Properties.ContainsKey(actualType))
+                            release.Properties[actualType] = JsonDocument.Parse(piece.Json).RootElement;
+                    }
+                    else
+                    {
+                        release.Properties[piece.Type] = JsonDocument.Parse(piece.Json).RootElement;
+                    }
+                }
+                catch (Exception)
+                {
+                    Logger.LogWarning("Invalid JSON for {gameId} piece {type}: {json}",
+                        piece.GameId, piece.Type, piece.Json);
+                }
+            }
+
+            var games = gameReleasesById.Values
+                .Select(rs => Game.Create(rs.Values))
+                .Where(g => g != null)
+                .ToList();
+
+            Logger.LogInformation("Found {count} games ({valid} valid) in {ms} ms",
+                gameReleasesById.Count, games.Count, sw.ElapsedMilliseconds);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e.ToString());
+            throw;
+        }
+    }
+}
