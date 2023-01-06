@@ -1,7 +1,6 @@
 ﻿@using Microsoft.Data.Sqlite
 @using System.Diagnostics
 @using System.Text.Json
-@using GgdbNet.Models
 @inject IJSRuntime Js
 @inject ILogger<DbDropArea> Logger
 
@@ -98,7 +97,7 @@
             }
 
             IReadOnlyList<Game> games = gameReleasesById.Values
-                .Select(rs => Game.Create(rs.Values))
+                .Select(rs => GameFactory.Create(rs.Values))
                 .Where(g => g != null)
                 .Cast<Game>()
                 .ToList();
