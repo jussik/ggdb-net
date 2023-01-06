@@ -1,0 +1,55 @@
+﻿@using System.Text.RegularExpressions
+@using System.Text
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<form>
+    Name: <input type="text" @bind="Collection.Name" @bind:event="oninput" @bind:after="NameChanged" required /><br/>
+    Id: <input type="text" @bind="Collection.PublicId" @bind:event="oninput" @bind:after="PublicIdChanged" required /><br/>
+    <button type="button" @onclick="SaveCollection" disabled="@Disabled">Save</button>
+</form>
+
+@code {
+    [Parameter, EditorRequired]
+    public Collection Collection { get; set; } = default!;
+    
+    private bool CustomPublicId { get; set; }
+    private bool Saving { get; set; }
+    private bool Disabled => Saving || string.IsNullOrWhiteSpace(Collection.Name) || string.IsNullOrWhiteSpace(Collection.PublicId);
+
+    private static Regex Diacritics { get; } = new(@"\p{M}", RegexOptions.Compiled);
+    private static Regex NonAlphanumChain { get; } = new(@"[^a-z0-9]+", RegexOptions.Compiled|RegexOptions.ECMAScript);
+    private void NameChanged()
+    {
+        if (CustomPublicId)
+            return;
+
+        string publicId = Collection.Name;
+        if (string.IsNullOrWhiteSpace(publicId))
+        {
+            Collection.PublicId = "";
+            return;
+        }
+        
+        publicId = Diacritics.Replace(publicId.Normalize(NormalizationForm.FormD), "").ToLowerInvariant();
+        publicId = NonAlphanumChain.Replace(publicId, "-");
+        publicId = publicId.Trim('-');
+        Collection.PublicId = publicId;
+    }
+
+    private void PublicIdChanged()
+    {
+        CustomPublicId = !string.IsNullOrEmpty(Collection.PublicId);
+    }
+
+    private async Task SaveCollection()
+    {
+        if (Disabled)
+            return;
+        
+        Saving = true;
+        await Http.PostAsJsonAsync("api/Collections", Collection);
+        Navigation.NavigateTo(Collection.PublicId);
+    }
+
+}
