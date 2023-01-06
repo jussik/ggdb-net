@@ -1,8 +1,11 @@
 ﻿@using GgdbNet.Models
+@using System.Text.Json
+@inject ILogger<DbDropArea> Logger
 
 <div class="item-parent">
     <div class="item">
-        <img class="cover" loading="lazy" src="@Game.VerticalCover" alt="@Game.Title" height="241" width="171" />
+        <img class="cover" loading="lazy" src="@Game.VerticalCover" alt="@Game.Title" height="241" width="171"
+             @onclick="OnClickedImage"/>
         <div class="platform-container">
             @foreach (string plat in Game.Platforms)
             {
@@ -19,7 +22,7 @@
             }
             <h2>@Game.Title</h2>
             <div>
-                @if (Game.Year.HasValue) { @(Game.Year + " |") }
+                @if (Game.ReleaseDate.HasValue) { @(Game.ReleaseDate.Value.Year + " | ") }
                 @string.Join(", ", Game.Genres)
                 |
                 @string.Join(", ", Game.Themes)
@@ -34,4 +37,9 @@
     [Parameter, EditorRequired]
     public Game Game { get; set; } = default!;
 
+    private void OnClickedImage()
+    {
+        Logger.LogInformation("Game: {Game}", JsonSerializer.Serialize(Game,
+            new JsonSerializerOptions {WriteIndented = true}));
+    }
 }
