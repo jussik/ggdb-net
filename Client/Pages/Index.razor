@@ -1,16 +1,31 @@
-﻿@page "/"
+﻿@page "/{CollectionId?}"
+@inject HttpClient Http
 
-@if (Games == null)
+@if (Collection == null && CollectionId == null)
 {
     <DbDropArea OnGamesLoaded="GamesLoaded"></DbDropArea>
 }
+else if(Collection != null)
+{
+    <GamesList Collection="Collection"></GamesList>
+}
 else
 {
-    <GamesList Games="Games"></GamesList>
+    <div>Loading collection '@CollectionId'...</div>
 }
 
 @code {
-    private IReadOnlyList<Game>? Games { get; set; }
+    [Parameter]
+    public string? CollectionId { get; set; }
+    
+    private Collection? Collection { get; set; }
 
-    private void GamesLoaded(IReadOnlyList<Game> games) => Games = games;
+    private void GamesLoaded(IReadOnlyList<Game> games) => Collection = new Collection {Games = games.ToList()};
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (CollectionId != null)
+            Collection = await Http.GetFromJsonAsync<Collection>($"api/collections/{CollectionId}");
+    }
+
 }

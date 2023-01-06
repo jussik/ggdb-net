@@ -30,7 +30,7 @@ public static class GameFactory
             DateAdded = rs.Min(r => r.AddedDate)!,
             ReleaseIds = releaseIds,
             SteamAppId = releaseIds.FirstOrDefault(r => r.StartsWith("steam_")) is { } steamReleaseId
-                ? steamReleaseId[(steamReleaseId.IndexOf('_') + 1)..]
+                ? long.Parse(steamReleaseId[(steamReleaseId.IndexOf('_') + 1)..])
                 : null,
             AllTitles = allTitles,
             Title = title,

@@ -4,18 +4,20 @@ public class Game
 {
     public record PlatformTitle(string Platform, string Title, string? SortingTitle);
 
-    public string GameId { get; set; }
-    public string DateAdded { get; set; }
-    public IReadOnlyList<string> ReleaseIds { get; set; }
-    public string? SteamAppId { get; set; }
-    public string? Title { get; set; }
-    public string? SortingTitle { get; set; }
-    public IReadOnlyList<PlatformTitle> AllTitles { get; set; }
-    public string? VerticalCover { get; set; }
-    public IReadOnlyList<string> Genres { get; set; }
-    public IReadOnlyList<string> Themes { get; set; }
-    public string? Summary { get; set; }
-    public DateTimeOffset? ReleaseDate { get; set; }
-    public IReadOnlyList<string> Platforms { get; set; }
-    public IReadOnlyList<string> Screenshots { get; set; }
+    public int CollectionId { get; init; }
+    public long GameId { get; init; }
+    
+    public string DateAdded { get; init; } = null!;
+    public IReadOnlyList<string> ReleaseIds { get; init; } = null!;
+    public long? SteamAppId { get; init; }
+    public string? Title { get; init; }
+    public string? SortingTitle { get; init; }
+    public IReadOnlyList<PlatformTitle> AllTitles { get; init; } = null!;
+    public string? VerticalCover { get; init; }
+    public IReadOnlyList<string> Genres { get; init; } = null!;
+    public IReadOnlyList<string> Themes { get; init; } = null!;
+    public string? Summary { get; init; }
+    public DateTimeOffset? ReleaseDate { get; init; }
+    public IReadOnlyList<string> Platforms { get; init; } = null!;
+    public IReadOnlyList<string> Screenshots { get; init; } = null!;
 }

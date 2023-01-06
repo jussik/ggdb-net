@@ -30,7 +30,7 @@
         await Js.InvokeVoidAsync("registerDrop", Elem, DotNetObjectReference.Create(this));
     }
 
-    public record Piece(string GameId, string ReleaseKey, string Platform, string AddedDate, string Type, string Json);
+    public record Piece(long GameId, string ReleaseKey, string Platform, string AddedDate, string Type, string Json);
 
     [JSInvokable]
     public async Task LoadDbData(byte[] data)
@@ -59,11 +59,11 @@
                 where (pc.platform is not null or p.releasekey like 'gog_%');", conn);
             await using SqliteDataReader reader = await cmd.ExecuteReaderAsync();
 
-            Dictionary<string, Dictionary<string, Release>> gameReleasesById = new();
+            Dictionary<long, Dictionary<string, Release>> gameReleasesById = new();
             while (await reader.ReadAsync())
             {
                 var piece = new Piece(
-                    GameId: reader.GetString(0),
+                    GameId: long.Parse(reader.GetString(0)),
                     ReleaseKey: reader.GetString(1),
                     Platform: reader.GetString(2),
                     AddedDate: reader.GetString(3),

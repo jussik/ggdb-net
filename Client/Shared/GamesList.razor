@@ -1,5 +1,12 @@
-﻿<div id="games">
-    @foreach (Game game in Games)
+﻿@inject HttpClient Http
+
+<div id="games">
+    <form>
+        Name: <input type="text" @bind="Collection.Name" @oninput="NameChanged" /><br/>
+        Id: <span style="font-family: monospace">@Collection.PublicId</span><br/>
+        <button type="button" @onclick="SaveCollection" disabled="@string.IsNullOrWhiteSpace(Collection.PublicId)">Save</button>
+    </form>
+    @foreach (Game game in Collection.Games!)
     {
         <GameDisplay Game="game"></GameDisplay>
     }
@@ -8,6 +15,10 @@
 @code {
 
     [Parameter, EditorRequired]
-    public IReadOnlyList<Game> Games { get; set; } = default!;
+    public Collection Collection { get; set; } = default!;
 
+    private void NameChanged(ChangeEventArgs obj)
+        => Collection.PublicId = obj.Value is string s ? s.ToLowerInvariant().Replace(' ', '-') : "";
+
+    private async Task SaveCollection() => await Http.PostAsJsonAsync("api/Collections", Collection);
 }

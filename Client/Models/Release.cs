@@ -2,7 +2,7 @@
 
 namespace GgdbNet.Client.Models;
 
-public record Release(string GameId, string Platform, string AddedDate)
+public record Release(long GameId, string Platform, string AddedDate)
 {
     public Dictionary<string, JsonElement> Properties { get; } = new();
 
